@@ -1,12 +1,12 @@
 package halite
 
-class Navigation(private val ship: Ship, private val target: Entity) {
+class Navigation(private val ship: Ship, private val target: Entity?) {
 
     fun navigateToDock(gameMap: GameMap, maxThrust: Int): ThrustMove? {
         val maxCorrections = Constants.MAX_NAVIGATION_CORRECTIONS
         val avoidObstacles = true
         val angularStepRad = Math.PI / 180.0
-        val targetPos = ship.getClosestPoint(target)
+        val targetPos = ship.getClosestPoint(target!!)
 
         return navigateTowards(gameMap, targetPos, maxThrust, avoidObstacles, maxCorrections, angularStepRad)
     }

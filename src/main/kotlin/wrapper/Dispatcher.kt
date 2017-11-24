@@ -1,5 +1,7 @@
 package wrapper
 
+import halite.DockingStatus
+import halite.Move
 import halite.Position
 import halite.Ship
 
@@ -54,37 +56,52 @@ class Dispatcher(val match: Match) { //Swarm mastermind, handles delegation of t
         allocatedShips.add(Pair(ship.id, directive))
     }
     
-    fun applyDirective(directive: Directive, ships: Int = 1, target: Position? = null) {
+    fun applyDirective(directive: Directive, shipCount: Int = 1, target: Position? = null, vararg ships: Ship) {
         val allocated = mutableListOf<Ship>()
         
-        val toCheck = mutableListOf<Ship>()
+        if (ships.isEmpty()) {
+            val toCheck = mutableListOf<Ship>()
 
-        toCheck.addAll(unallocatedShips.map { this@Dispatcher[it]!! })
-        
-        if (target != null)
-            toCheck.sortBy { it.getDistanceTo(target) }
-        
-        for (i in 0 until ships) {
-            if (toCheck.size > i)
-                allocated.add(toCheck[i])
-        }
-        
-        if (allocated.size < ships) {
-            toCheck.clear()
-
-            toCheck.addAll(allocatedShips.filter { it.second.priority < directive.priority }.map { this@Dispatcher[it.first]!! })
+            toCheck.addAll(unallocatedShips.map { this@Dispatcher[it]!! })
 
             if (target != null)
                 toCheck.sortBy { it.getDistanceTo(target) }
 
-            for (i in 0 until ships) {
+            for (i in 0 until shipCount) {
                 if (toCheck.size > i)
                     allocated.add(toCheck[i])
             }
+
+            if (allocated.size < shipCount) {
+                toCheck.clear()
+
+                toCheck.addAll(allocatedShips.filter { it.second.priority < directive.priority }.map { this@Dispatcher[it.first]!! })
+
+                if (target != null)
+                    toCheck.sortBy { it.getDistanceTo(target) }
+
+                for (i in 0 until shipCount) {
+                    if (toCheck.size > i)
+                        allocated.add(toCheck[i])
+                }
+            }
+        } else {
+            allocated.addAll(ships)
         }
         
         allocated.forEach { 
             allocate(it, directive)
+        }
+    }
+    
+    fun queue(move: Move?) {
+        if (move != null) {
+            if (move.ship.dockingStatus != DockingStatus.Docking && move.ship.dockingStatus != DockingStatus.Undocking) {
+                if (match.moveQueue.find { it.ship.id == move.ship.id } == null)
+                    match.moveQueue.add(move)
+                else
+                    log("Attempted to queue move $move when ship ${move.ship.id} already had a move scheduled!")
+            }
         }
     }
 }
