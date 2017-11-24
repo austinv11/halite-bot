@@ -4,8 +4,10 @@
 
 ./gradlew build
 
-zip -r bot.zip .
+mv ./build/libs/MyBot.jar .
 
-hlt bot -b bot.zip
+zip -r MyBot.zip .
 
-rm bot.zip
+hlt bot -b MyBot.zip
+
+rm MyBot.zip

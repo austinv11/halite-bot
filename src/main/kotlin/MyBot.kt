@@ -1,28 +1,51 @@
-import halite.Constants
-import halite.DockMove
-import halite.DockingStatus
-import halite.Navigation
-import wrapper.startMatch
+import halite.*
+import wrapper.*
 
 
 fun main(args: Array<String>) {
-    startMatch("Goblin", {}, {
-        map.myPlayer.ships.values
-                .filter { it.dockingStatus == DockingStatus.Undocked }
-                .forEach { ship ->
-                    val planet = map.allPlanets.values.firstOrNull { !it.isOwned }
-                    if (planet != null) {
-                        if (ship.canDock(planet)) {
-                            moveQueue.add(DockMove(ship, planet))
-                        } else {
-                            val newThrustMove = Navigation(ship, planet).navigateToDock(map, Constants.MAX_SPEED / 2)
+    log("Starting...")
+    startMatch("Mastermind", {
+        
+    }, {
+        if (turnCount == 0) { //First turn
+            log("First turn")
+            val directedPlanets = mutableListOf<Int>()
+            map.myPlayer.ships.values.forEach { 
+                val planet = closestPlanets(it).find { !directedPlanets.contains(it.id) }!!
+                dispatcher.applyDirective(dispatcher.opener(planet), target = planet)
+                directedPlanets.add(planet.id)
+            }
+        } else {
+            log("Turn $turnCount")
+            dispatcher.applyDirective(dispatcher.generateDirective(Priority.LOWEST, { match ->
+                val planet = map.allPlanets.values.firstOrNull { !it.isOwned }
+                if (planet != null) {
+                    if (this.canDock(planet)) {
+                        moveQueue.add(DockMove(this, planet))
+                    } else {
+                        val newThrustMove = Navigation(this, planet).navigateToDock(map, Constants.MAX_SPEED)
 
-                            if (newThrustMove != null) {
-                                moveQueue.add(newThrustMove)
-                            }
+                        if (newThrustMove != null) {
+                            moveQueue.add(newThrustMove)
                         }
                     }
                 }
+            }), dispatcher.unallocatedShips.size)
+        }
     })
 }
 
+fun Dispatcher.opener(planet: Planet): Directive {
+    return generateDirective(Priority.HIGH) { match -> 
+        if (this.canDock(planet))
+            match.moveQueue.add(DockMove(this, planet))
+        else if (this.dockingStatus == DockingStatus.Docked) {
+            this.deallocate()
+        } else {
+            val newThrustMove = Navigation(this, planet).navigateToDock(match.map, Constants.MAX_SPEED)
+            
+            if (newThrustMove != null)
+                match.moveQueue.add(newThrustMove)
+        }
+    }
+}

@@ -3,6 +3,7 @@ package wrapper
 import halite.GameMap
 import halite.Move
 import halite.Networking
+import kotlinx.coroutines.experimental.Unconfined
 import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.runBlocking
 import kotlinx.coroutines.experimental.withTimeout
@@ -23,6 +24,8 @@ data class Match(val network: Networking,
     
     val map: GameMap
     val moveQueue: MutableList<Move> = mutableListOf()
+    val dispatcher: Dispatcher
+    @Volatile var turnCount: Int = -1
     
     init {
         runBlocking {
@@ -33,19 +36,28 @@ data class Match(val network: Networking,
             } catch (e: Exception) {}
         }
         
+        turnCount++
         map = network.initialize(name)
-        
-        launch { 
+        dispatcher = Dispatcher(this)
+        launch(Unconfined) { 
             while (true) {
-                withTimeout(MAX_TURN_TIME) {
-                    map.updateMap(Networking.readLineIntoMetadata())
+                try {
+                    withTimeout(MAX_TURN_TIME) {
+                        map.updateMap(Networking.readLineIntoMetadata())
+                        dispatcher.update()
 
-                    gameLoopCallback(this@Match, map)
-                    
-                    Networking.sendMoves(moveQueue)
-                    moveQueue.clear()
-                }
+                        try {
+                            gameLoopCallback(this@Match, map)
+                        } catch (e: Exception) {}
+                        
+                        dispatcher.dispatch()
+
+                        Networking.sendMoves(moveQueue)
+                        moveQueue.clear()
+                    }
+                } catch (e: Exception) {}
+                turnCount++
             }
-        }
+        }.start()
     }
 }
