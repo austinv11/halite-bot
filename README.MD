@@ -1,16 +1,17 @@
-# Using your starter kit
+# The "Mastermind" bot
+The basic idea of the bot is that it commands units on a macro scale. Based upon the environment and game data, it will generate 
+"directives". These have a set of parameters including priority to automatically manage and assign ships to complete this directive.
+This allows for bot logic to ignore individual ship management, instead the ships are deployed in a predictable and effective manner.
 
-All starter kits should contain a `run_game.sh` and `run_game.bash`, you can use these scripts to quickly run a game of halite. By default, this script runs the basic __Settler__ bot against itself.
+## Halite SDK Notes
+This bot is built upon the kotlin halite starter kit. However, this has been modified for this bot's use. Everything based on the starter
+kit is under the `halite` package and my wrapper over this kit is in the `wrapper` package.
 
-## Bot submission guidelines
+## Deploying the bot
+**Note:** These scripts expect the [Halite Client tool](https://halite.io/learn-programming-challenge/halite-cli-and-tools/halite-client-tools) to be installed.
 
-Before submitting a bot, make sure you adhere to our guidelines, or the upload or compilation of your bot will fail.
+### Running the bot locally against itself
+Simply run `./localtest.sh`
 
-1. You should have a `MyBot.{extension for language}` in the root folder of your zip. For Rust, this should be a `cargo.toml`
-2. If you are building on top of starter kit provided by us, make sure to include the hlt folder.
-
-## Uploading your bot
-
-* Website: You can use the [play page](https://halite.io/play-programming-challenge) in the Halite website to submit your bot.
-* Halite Client: If you want a command line experience, you can use the [Halite Client tool](https://halite.io/learn-programming-challenge/halite-cli-and-tools/halite-client-tools) to upload your bot.
-
+### Deploying the bot to halite.io
+First authenticate yourself with the halite client tool (only needed for first use) using `hlt auth`, then run `./deploy.sh`.
