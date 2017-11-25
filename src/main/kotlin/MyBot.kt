@@ -32,7 +32,7 @@ fun main(args: Array<String>) {
                         .map { Pair(it, closestPlanets(it).first()) }
                         .filter { it.first.getDistanceTo(it.second) <= DEFENSE_DISTANCE }
                 
-                val priority = Priority.values()[((1 - mapControlPercentage()) * Priority.values().size).toInt()]
+                val priority = Priority.values()[((1 - mapControlPercentage()) * (Priority.values().size - 1)).toInt()]
                 
                 dangerousShips.forEach { 
                     dispatcher.applyDirective(dispatcher.attackShip(priority, it.first), target = it.second)
