@@ -87,7 +87,7 @@ fun Dispatcher.claimNeutralPlanet(planet: Planet): Directive {
         if (this.canDock(planet))
             queue(DockMove(this, planet))
         else if (this.dockingStatus == DockingStatus.Docked || planet.isOwned) {
-            this.deallocate()
+            //pass
         } else {
             val newThrustMove = Navigation(this, planet).navigateToDock(match.map, Constants.MAX_SPEED)
             
@@ -99,7 +99,9 @@ fun Dispatcher.claimNeutralPlanet(planet: Planet): Directive {
 
 fun Dispatcher.attackShip(priority: Priority, ship: Ship): Directive {
     return generateDirective(priority) {
-        if (this.dockingStatus == DockingStatus.Docked || this.dockingStatus == DockingStatus.Undocking) {
+        if (match.map.allShips.firstOrNull { it.id == ship.id } == null) {
+            this.deallocate()
+        } else if (this.dockingStatus == DockingStatus.Docked || this.dockingStatus == DockingStatus.Undocking) {
             queue(UndockMove(this))
         } else if (this.dockingStatus == DockingStatus.Undocked) {
             val move = Navigation(this, ship).navigateTowards(match.map, ship.getClosestPoint(this), Constants.MAX_SPEED, true, Constants.MAX_NAVIGATION_CORRECTIONS, DEFAULT_ANGULAR_STEP)
@@ -123,9 +125,9 @@ fun Dispatcher.reinforcePlanet(): Directive {
             planet.isOwned && planet.owner == it.map.myPlayerId && !planet.isFull
         }
         
-        if (toReinforce == null)
+        if (toReinforce == null) {
             this.deallocate()
-        else {
+        } else {
             if (this.canDock(toReinforce) && this.dockingStatus != DockingStatus.Docked) {
                 queue(DockMove(this, toReinforce))
             } else {
